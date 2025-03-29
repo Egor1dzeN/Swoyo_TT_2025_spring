@@ -44,8 +44,9 @@ public class MyServer {
     }
 
     public static void main(String[] args) throws Exception {
-        int port = 8080;
+        int port = 8081;
+        System.out.println("Server started on port " + port);
         new MyServer(port).run();
-        System.out.println("test");
+
     }
 }
