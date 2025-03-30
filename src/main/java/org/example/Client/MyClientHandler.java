@@ -2,7 +2,7 @@ package org.example.Client;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import org.example.Client.DTO.ObjectDTO;
+import org.example.DTO.ObjectDTO;
 
 public class MyClientHandler extends SimpleChannelInboundHandler<ObjectDTO> {
 

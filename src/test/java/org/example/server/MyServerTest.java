@@ -3,8 +3,8 @@ package org.example.server;
 import io.netty.channel.embedded.EmbeddedChannel;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
-import org.example.Client.DTO.CommandType;
-import org.example.Client.DTO.ObjectDTO;
+import org.example.DTO.CommandType;
+import org.example.DTO.ObjectDTO;
 import org.junit.jupiter.api.Test;
 
 import java.io.File;

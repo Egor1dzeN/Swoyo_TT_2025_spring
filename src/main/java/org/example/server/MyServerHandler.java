@@ -2,8 +2,8 @@ package org.example.server;
 
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import org.example.Client.DTO.CommandType;
-import org.example.Client.DTO.ObjectDTO;
+import org.example.DTO.CommandType;
+import org.example.DTO.ObjectDTO;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;

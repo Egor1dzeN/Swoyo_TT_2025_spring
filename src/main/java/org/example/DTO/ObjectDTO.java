@@ -1,4 +1,4 @@
-package org.example.Client.DTO;
+package org.example.DTO;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -21,8 +21,5 @@ public class ObjectDTO implements Serializable {
         this.data = data;
         this.params = params;
         this.commandType = commandType;
-    }
-
-    public ObjectDTO() {
     }
 }

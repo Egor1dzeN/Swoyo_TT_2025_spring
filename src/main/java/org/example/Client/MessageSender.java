@@ -2,7 +2,7 @@ package org.example.Client;
 
 import io.netty.channel.Channel;
 import lombok.Data;
-import org.example.Client.DTO.ObjectDTO;
+import org.example.DTO.ObjectDTO;
 
 import java.util.concurrent.CountDownLatch;
 

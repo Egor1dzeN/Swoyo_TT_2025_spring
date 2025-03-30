@@ -8,8 +8,8 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.serialization.ClassResolvers;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
-import org.example.Client.DTO.CommandType;
-import org.example.Client.DTO.ObjectDTO;
+import org.example.DTO.CommandType;
+import org.example.DTO.ObjectDTO;
 
 import java.io.*;
 import java.nio.file.Files;

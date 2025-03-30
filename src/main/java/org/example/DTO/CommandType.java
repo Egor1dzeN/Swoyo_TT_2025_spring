@@ -1,4 +1,4 @@
-package org.example.Client.DTO;
+package org.example.DTO;
 
 import java.io.Serializable;
 
