@@ -13,6 +13,28 @@ import java.nio.file.Paths;
 import java.util.*;
 
 public class MyServerHandler extends SimpleChannelInboundHandler<ObjectDTO> {
+    public MyServerHandler() {
+        super();
+        try {
+            String dir = System.getProperty("user.dir");
+            String dir1 = dir + "\\chapters";
+
+            // Создаем директорию (если она отсутствует), в которой будут храниться голосования
+            File theDir = new File(dir1);
+            if (!theDir.exists()) {
+                Files.createDirectory(Path.of(dir1));
+            }
+            String dir2 = dir1 + "\\download";
+            theDir = new File(dir2);
+            if (!theDir.exists()) {
+                Files.createDirectory(Path.of(dir2));
+            }
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
+
+
+    }
 
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, ObjectDTO objectDTO) {
@@ -59,8 +81,6 @@ public class MyServerHandler extends SimpleChannelInboundHandler<ObjectDTO> {
     @Override
     public void channelActive(ChannelHandlerContext ctx) {
         System.out.println("client connected");
-        System.out.println(ctx.name());
-        System.out.println(ctx.channel().remoteAddress());
     }
 
     @Override
