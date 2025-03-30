@@ -3,13 +3,16 @@ package org.example.Client;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.SimpleChannelInboundHandler;
+import org.example.Client.DTO.ObjectDTO;
 
-public class MyServerHandler extends ChannelInboundHandlerAdapter {
+public class MyClientHandler extends SimpleChannelInboundHandler<ObjectDTO> {
+
     @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) {
-        ByteBuf in = (ByteBuf) msg;
-        System.out.println("Клиент получил: " + in.toString(io.netty.util.CharsetUtil.UTF_8));
-//        ctx.w
+    protected void channelRead0(ChannelHandlerContext channelHandlerContext, ObjectDTO objectDTO) throws Exception {
+        System.out.println("Response from server: " + objectDTO);
+        System.out.println("Data:"+objectDTO.getData());
+        MyClient.latch.countDown();
     }
 
     @Override
