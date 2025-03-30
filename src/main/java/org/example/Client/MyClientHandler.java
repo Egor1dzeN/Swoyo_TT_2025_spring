@@ -1,17 +1,14 @@
 package org.example.Client;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.SimpleChannelInboundHandler;
 import org.example.Client.DTO.ObjectDTO;
 
 public class MyClientHandler extends SimpleChannelInboundHandler<ObjectDTO> {
 
     @Override
-    protected void channelRead0(ChannelHandlerContext channelHandlerContext, ObjectDTO objectDTO) throws Exception {
-        System.out.println("Response from server: " + objectDTO);
-        System.out.println("Data:"+objectDTO.getData());
+    protected void channelRead0(ChannelHandlerContext channelHandlerContext, ObjectDTO objectDTO) {
+        System.out.println("Answer from server: \n" + objectDTO.getData());
         MyClient.latch.countDown();
     }
 

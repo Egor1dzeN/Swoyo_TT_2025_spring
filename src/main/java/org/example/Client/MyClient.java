@@ -5,29 +5,23 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.handler.codec.serialization.ClassResolver;
 import io.netty.handler.codec.serialization.ClassResolvers;
 import io.netty.handler.codec.serialization.ObjectDecoder;
 import io.netty.handler.codec.serialization.ObjectEncoder;
 import org.example.Client.DTO.CommandType;
 import org.example.Client.DTO.ObjectDTO;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MyClient {
+    private final int TIMEOUT_IN_SECONDS = 5;
     private static String username;
     private final String host;
     private final int port;
@@ -82,18 +76,15 @@ public class MyClient {
         latch.countDown();
         while (true) {
             try {
-                System.out.println("Ждем latch");
-                boolean awaitResult = latch.await(5, TimeUnit.SECONDS);
+                boolean awaitResult = latch.await(TIMEOUT_IN_SECONDS, TimeUnit.SECONDS);
                 if (!awaitResult) {
                     System.out.println("Couldn't get a response from the server");
                 }
-                System.out.println("Прошли latch");
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
             System.out.print("Введите команду: ");
             String request = scanner.nextLine();
-            System.out.println("Вы ввели: " + request);
             if (Pattern.matches("^login -u=[a-zA-Z0-9_]+$", request)) {
                 login(request);
             }
@@ -118,6 +109,7 @@ public class MyClient {
             }
             // Проверяем create vote
             else if (Pattern.matches("^create vote -t=[a-zA-Z0-9_]+$", request)) {
+                createVote(request, channel);
 //            return true;
             }
             // Проверяем view с -t и -v
@@ -127,12 +119,11 @@ public class MyClient {
             }
             // Проверяем vote
             else if (Pattern.matches("^vote -t=[a-zA-Z0-9_]+ -v=[a-zA-Z0-9_]+$", request)) {
-//            return true;
+                vote(request, channel);
             } else if (Pattern.matches("^delete -t=[a-zA-Z0-9_]+ -v=[a-zA-Z0-9_]+$", request)) {
-//            return true;
+                deleteVoid(request, channel);
             } else if (Pattern.matches("^exit$", request)) {
                 System.out.println("Turning off");
-//            return true;
                 return;
             } else {
                 System.out.println("Неизвестная команда");
@@ -149,9 +140,77 @@ public class MyClient {
         Matcher matcher = pattern.matcher(request);
         if (matcher.matches()) {
             username = matcher.group(1);
-            System.out.println("username = " + username);
         } else {
             System.err.println("Unknown error");
+        }
+    }
+
+    public void deleteVoid(String request, Channel channel) {
+        Pattern pattern = Pattern.compile("^delete -t=([a-zA-Z0-9_]+) -v=([a-zA-Z0-9_]+)$");
+        Matcher matcher = pattern.matcher(request);
+        if (matcher.matches()) {
+            String topicName = matcher.group(1);
+            String voteName = matcher.group(2);
+            HashMap<String, String> map = new HashMap<>();
+            map.put("-t", topicName);
+            map.put("-v", voteName);
+            ObjectDTO dto = new ObjectDTO(username, null, map, CommandType.DELETE);
+            MessageSender messageSender = new MessageSender(dto, channel);
+            messageSender.sendMessage(latch);
+        }
+    }
+
+    public void vote(String request, Channel channel) {
+        Pattern pattern = Pattern.compile("^vote -t=([a-zA-Z0-9_]+) -v=([a-zA-Z0-9_]+)$");
+        Matcher matcher = pattern.matcher(request);
+        if (matcher.matches()) {
+            Scanner scanner = new Scanner(System.in);
+            System.out.print("Выберите число ответа:");
+            int ans = scanner.nextInt();
+            String topic = matcher.group(1);
+            String vote = matcher.group(2);
+            HashMap<String, String> map = new HashMap<>();
+            map.put("-t", topic);
+            map.put("-v", vote);
+            map.put("-a", ans + "");
+            ObjectDTO dto = new ObjectDTO(username, null, map, CommandType.VOTE);
+            MessageSender messageSender = new MessageSender(dto, channel);
+            messageSender.sendMessage(latch);
+        }
+    }
+
+    public void createVote(String request, Channel channel) {
+        Pattern pattern = Pattern.compile("^create vote -t=([a-zA-Z0-9_]+)$");
+        Matcher matcher = pattern.matcher(request);
+        if (matcher.matches()) {
+            Scanner scanner = new Scanner(System.in);
+            System.out.print("Введите название голосования: ");
+            String name_vote = scanner.nextLine();
+
+            System.out.print("\nВведите тему голосования: ");
+            String topic_vote = scanner.nextLine();
+
+            System.out.print("\nВведите количество вариантов ответа: ");
+            int count_vote = Integer.parseInt(scanner.nextLine());
+            List<String> list = new ArrayList<>();
+
+            System.out.println("\nВведите варианты ответов: ");
+            for (int i = 1; i <= count_vote; ++i) {
+                System.out.print(i + ". ");
+                list.add(scanner.nextLine() + " 0");
+            }
+
+            String topic = matcher.group(1);
+            HashMap<String, String> map = new HashMap<>();
+            map.put("-t", topic);
+            map.put("-n", name_vote);
+            map.put("-v", topic_vote);
+            map.put("-c", count_vote + "");
+            String listString = String.join(";", list);
+            map.put("-l", listString);
+            ObjectDTO objectDTO = new ObjectDTO(username, null, map, CommandType.CREATE_VOTE);
+            MessageSender messageSender = new MessageSender(objectDTO, channel);
+            messageSender.sendMessage(MyClient.latch);
         }
     }
 
@@ -165,7 +224,6 @@ public class MyClient {
             ObjectDTO objectDTO = new ObjectDTO(username, "Test", map, CommandType.CREATE_TOPIC);
             MessageSender messageSender = new MessageSender(objectDTO, channel);
             messageSender.sendMessage(MyClient.latch);
-            System.out.println("username = " + username);
 //            return loginUser(username); // Вызываем метод входа
         } else {
             System.err.println("Unknown error");
@@ -173,33 +231,25 @@ public class MyClient {
     }
 
     public void view(String request, Channel channel) {
-        System.out.println("VIEW");
         HashMap<String, String> map = new HashMap<>();
         Pattern pattern = Pattern.compile("^view -t=([a-zA-Z0-9_]+) -v=([a-zA-Z0-9_]+)$");
         Matcher matcher = pattern.matcher(request);
         if (matcher.matches()) {
             String topicName = matcher.group(1);
+            String voteName = matcher.group(2);
             map = new HashMap<>();
             map.put("-t", topicName);
-
-            System.out.println(topicName);
+            map.put("-v", voteName);
         }
         pattern = Pattern.compile("^view -t=([a-zA-Z0-9_]+)$");
         matcher = pattern.matcher(request);
         if (matcher.matches()) {
-            System.out.println("View: " + matcher.group(1));
             String topicName = matcher.group(1);
-            String voteName = matcher.group(2);
-            System.out.println(topicName);
-            System.out.println(matcher.group(2));
-
-            return;
+            map = new HashMap<>();
+            map.put("-t", topicName);
         }
         pattern = Pattern.compile("^view$");
         matcher = pattern.matcher(request);
-        if (matcher.matches()) {
-            System.out.println("just view");
-        }
         ObjectDTO objectDTO = new ObjectDTO(username, null, map, CommandType.VIEW);
         MessageSender messageSender = new MessageSender(objectDTO, channel);
         messageSender.sendMessage(MyClient.latch);
@@ -222,7 +272,6 @@ public class MyClient {
     }
 
     public static void main(String[] args) {
-        System.out.println("args:" + Arrays.toString(args));
         for (int i = 0; i < args.length; i++) {
             if (args[i].equals("-m") && i + 1 < args.length) {
                 if (args[i + 1].equalsIgnoreCase("debug")) {
