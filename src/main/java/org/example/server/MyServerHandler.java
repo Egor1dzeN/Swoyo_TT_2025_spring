@@ -1,12 +1,9 @@
 package org.example.server;
 
-import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.SimpleChannelInboundHandler;
 import org.example.Client.DTO.CommandType;
 import org.example.Client.DTO.ObjectDTO;
-import org.example.Client.MyClient;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -14,7 +11,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 public class MyServerHandler extends SimpleChannelInboundHandler<ObjectDTO> {
 //    @Override
@@ -29,7 +25,7 @@ public class MyServerHandler extends SimpleChannelInboundHandler<ObjectDTO> {
 //    }
 
     @Override
-    protected void channelRead0(ChannelHandlerContext channelHandlerContext, ObjectDTO objectDTO) throws Exception {
+    protected void channelRead0(ChannelHandlerContext channelHandlerContext, ObjectDTO objectDTO) {
         try {
             System.out.println("Request from client: " + objectDTO);
             if (objectDTO.getCommandType() == CommandType.CREATE_TOPIC) {
@@ -64,14 +60,14 @@ public class MyServerHandler extends SimpleChannelInboundHandler<ObjectDTO> {
     }
 
     @Override
-    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+    public void channelActive(ChannelHandlerContext ctx) {
         System.out.println("client connected");
         System.out.println(ctx.name());
         System.out.println(ctx.channel().remoteAddress());
     }
 
     @Override
-    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+    public void channelInactive(ChannelHandlerContext ctx) {
         System.out.println("Клиент отключился: " + ctx.channel().remoteAddress());
         ctx.close();
     }
@@ -79,9 +75,8 @@ public class MyServerHandler extends SimpleChannelInboundHandler<ObjectDTO> {
     public String createTopic(String name) throws IOException {
         System.out.println("Create topic: " + name);
         StringBuilder sb = new StringBuilder();
-        String topic = name;
         String dir = System.getProperty("user.dir");
-        dir += "\\chapters\\" + topic;
+        dir += "\\chapters\\" + name;
         File file = new File(dir);
 
         if (file.exists()) {
@@ -90,19 +85,18 @@ public class MyServerHandler extends SimpleChannelInboundHandler<ObjectDTO> {
         }
 
         Files.createDirectory(Path.of(dir));
-        sb.append("Раздел с именем ").append(topic).append(" создан");
+        sb.append("Раздел с именем ").append(name).append(" создан");
         return sb.toString();
     }
 
     public String viewList(String nameTopic, String nameVote) throws IOException {
-        String topic = nameTopic;
         String dir = System.getProperty("user.dir");
         dir += "\\chapters";
         File dir4 = new File(dir);
         StringBuilder ans = new StringBuilder();
         int count = 0;
         //Берем все существующие на сервере разделы
-        if (topic == null) {
+        if (nameTopic == null) {
             for (File file : Objects.requireNonNull(dir4.listFiles())) {
                 count++;
                 ans.append("Раздел - ").append(file.getName()).append(". ");
@@ -112,20 +106,20 @@ public class MyServerHandler extends SimpleChannelInboundHandler<ObjectDTO> {
             if (nameVote == null || nameVote.isEmpty()) {
                 for (File file : Objects.requireNonNull(dir4.listFiles())) {
                     //Проверяем на название
-                    if (file.getName().equals(topic)) {
+                    if (file.getName().equals(nameTopic)) {
                         count++;
                         ans.append("Раздел - ").append(file.getName()).append(" - ");
                         ans.append(" Кол-во голосований - ").append(Objects.requireNonNull(file.listFiles()).length).append(';');
                     }
                 }
             }else{
-                String path_dir = "chapters\\" + topic + "\\" + nameVote + ".txt";
+                String path_dir = "chapters\\" + nameTopic + "\\" + nameVote + ".txt";
                 File file = new File(path_dir);
                 //Ищем файл голосования в разделе <topic> с именем <vote>
                 if (!file.exists()) {
                     ans.append("Файл не найден");
                 }
-                //Читаем файл голосвания
+                //Читаем файл голосования
                 FileReader fr = new FileReader(file);
                 BufferedReader reader = new BufferedReader(fr);
                 String line = reader.readLine();
@@ -140,16 +134,18 @@ public class MyServerHandler extends SimpleChannelInboundHandler<ObjectDTO> {
                  * тему голосования
                  * варианты ответа и количество пользователей выбравших данный вариант
                  */
-                List<String> list = lines;
-                for (int i = 0; i < list.size(); ++i) {
+                for (int i = 0; i < lines.size(); ++i) {
                     if (i == 0) {
-                        ans.append("Тема: ").append(list.get(i));
-                    } else if (list.get(i).equals("")) {
-                    } else if (i == list.size() - 1)
-                        ans.append("Разработчик  - ").append(list.get(i));
+                        ans.append("Тема: ").append(lines.get(i));
+                    } else
+//                        if (lines.get(i).isEmpty()) {
+//
+//                    } else
+                        if (i == lines.size() - 1)
+                        ans.append("Разработчик  - ").append(lines.get(i));
                     else {
                         //String words[] = list.get(i).split(" ");
-                        ans.append(i).append(". ").append(list.get(i));
+                        ans.append(i).append(". ").append(lines.get(i));
                     }
 
 
@@ -163,7 +159,7 @@ public class MyServerHandler extends SimpleChannelInboundHandler<ObjectDTO> {
 
         //Если разделов на нашлось
         if (count == 0)
-            ans = new StringBuilder("Разделы с именем " + topic + " не найдены");
+            ans = new StringBuilder("Разделы с именем " + nameTopic + " не найдены");
         //Отправляем ответ
         return ans.toString();
     }
